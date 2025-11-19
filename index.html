@@ -1,48 +1,55 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Quiz: Oceany, Morza, Zatoki</title>
-<link
-  rel="stylesheet"
-  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-  crossorigin=""
-/>
-<style>
-  html, body { height:100%; margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial; background:#f6f7f9; color:#222; }
-  .app { display:flex; height:100vh; width:100vw; overflow:hidden; }
-  .sidebar { width:300px; min-width:260px; max-width:420px; background:#fff; border-right:1px solid #e5e7eb; display:flex; flex-direction:column; }
-  .sidebar header { padding:14px 16px 10px; border-bottom:1px solid #eef0f2; }
-  .sidebar h1 { margin:0 0 6px; font-size:16px; font-weight:600; }
-  .controls { display:flex; gap:8px; flex-wrap:wrap; }
-  .controls button { appearance:none; border:1px solid #d1d5db; background:#fff; padding:6px 10px; border-radius:6px; font-size:13px; cursor:pointer; }
-  .controls button.primary { background:#2563eb; color:#fff; border-color:#2563eb; }
-  .controls button:disabled { opacity:0.6; cursor:not-allowed; }
-  .list { padding:8px 12px 12px; overflow:auto; }
-  .list .search { margin:4px 0 10px; }
-  .list input[type="text"] { width:100%; padding:8px 10px; border-radius:6px; border:1px solid #d1d5db; font-size:14px; }
-  .cities { list-style:none; padding:0; margin:8px 0 0; max-height:calc(100vh - 210px); overflow:auto; }
-  .cities li { display:flex; align-items:center; gap:8px; padding:6px 4px; border-radius:6px; }
-  .cities li:hover { background:#f3f4f6; }
-  .main { position:relative; flex:1; display:flex; align-items:stretch; justify-content:center; background:#e5e7eb; }
-  #map { height:100%; width:100%; }
-  @media (max-width: 768px) { .sidebar { width:100%; max-width:none; } }
-  .hud { position:absolute; top:12px; left:50%; transform:translateX(-50%); display:flex; gap:12px; background:rgba(255,255,255,0.9); border:1px solid #e5e7eb; border-radius:10px; padding:8px 12px; box-shadow:0 2px 10px rgba(0,0,0,0.08); font-size:14px; z-index:500; }
-  .hud .target { font-weight:600; }
-  .toast { position:absolute; bottom:16px; left:50%; transform:translateX(-50%); background:rgba(17,24,39,0.9); color:#fff; padding:10px 14px; border-radius:8px; font-size:14px; display:none; z-index:600; }
-  .footer { position:absolute; bottom:10px; right:10px; background:rgba(255,255,255,0.85); border:1px solid #e5e7eb; border-radius:8px; padding:6px 10px; font-size:12px; z-index:500; }
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Quiz: Oceany, Morza i Zatoki</title>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+  <style>
+    html, body {height: 100%; margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial; background: #f6f7f9; color: #222;}
+    .app {display: flex; height: 100vh; width: 100vw; overflow: hidden;}
+    .sidebar {width: 300px; min-width: 260px; max-width: 420px; background: #ffffff; border-right: 1px solid #e5e7eb; display: flex; flex-direction: column;}
+    .sidebar header {padding: 14px 16px 10px; border-bottom: 1px solid #eef0f2;}
+    .sidebar h1 {margin: 0 0 6px; font-size: 16px; font-weight: 600;}
+    .controls {display: flex; gap: 8px; flex-wrap: wrap;}
+    .controls button {appearance: none; border: 1px solid #d1d5db; background: #fff; padding: 6px 10px; border-radius: 6px; font-size: 13px; cursor: pointer;}
+    .controls button.primary {background: #2563eb; color: #fff; border-color: #2563eb;}
+    .controls button:disabled {opacity: 0.6; cursor: not-allowed;}
+    .list {padding: 8px 12px 12px; overflow: auto;}
+    .list .search {margin: 4px 0 10px;}
+    .list input[type="text"] {width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid #d1d5db; font-size: 14px;}
+    .cities {list-style: none; padding: 0; margin: 8px 0 0; max-height: calc(100vh - 210px); overflow: auto;}
+    .cities li {display: flex; align-items: center; gap: 8px; padding: 6px 4px; border-radius: 6px;}
+    .cities li:hover {background: #f3f4f6;}
+    .main {position: relative; flex: 1; display: flex; align-items: stretch; justify-content: center; background: #e5e7eb;}
+    #map {height: 100%; width: 100%;}
+    @media (max-width: 768px) { .sidebar {width: 100%; max-width: none;} }
+    .hud {position: absolute; top: 12px; left: 50%; transform: translateX(-50%); display: flex; gap: 12px; background: rgba(255,255,255,0.9); border: 1px solid #e5e7eb; border-radius: 10px; padding: 8px 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); font-size: 14px; z-index: 500;}
+    .hud .target {font-weight: 600;}
+    .toast {position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); background: rgba(17,24,39,0.9); color: #fff; padding: 10px 14px; border-radius: 8px; font-size: 14px; display: none; z-index: 600;}
+    .footer {position: absolute; bottom: 10px; right: 10px; background: rgba(255,255,255,0.85); border: 1px solid #e5e7eb; border-radius: 8px; padding: 6px 10px; font-size: 12px; z-index: 500;}
+  </style>
 </head>
 <body>
 <div class="app">
   <aside class="sidebar">
     <header>
-      <h1>Oceany, Morza, Zatoki</h1>
+      <h1>Quiz: Oceany, Morza i Zatoki</h1>
       <div class="controls">
         <button id="selectAll">Zaznacz wszystkie</button>
         <button id="deselectAll">Odznacz wszystkie</button>
+        <label for="sort" style="margin-left:auto; font-size:12px; align-self:center;">Sortuj:</label>
+        <select id="sort" style="border:1px solid #d1d5db; border-radius:6px; padding:6px 8px; font-size:13px;">
+          <option value="name-asc">A → Z</option>
+          <option value="name-desc">Z → A</option>
+        </select>
+        <input id="pickCount" type="number" min="1" value="10" title="Ile pierwszych zaznaczyć" style="width:72px; padding:6px 8px; border:1px solid #d1d5db; border-radius:6px; font-size:13px;" />
+        <button id="pickTop">Wybierz X pierwszych</button>
         <button id="startBtn" class="primary">Start</button>
         <button id="resetBtn">Reset</button>
       </div>
@@ -66,154 +73,134 @@
   </main>
 </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
-// --- Dane: oceany, morza, zatoki ---
-const COUNTRY_DATA = [
-  { name: 'Ocean Indyjski', lat: -20, lng: 80 },
-  { name: 'Ocean Spokojny', lat: 0, lng: -160 },
-  { name: 'Ocean Arktyczny', lat: 80, lng: 0 },
-  { name: 'Morze Arabskie', lat: 15, lng: 65 },
-  { name: 'Morze Karskie', lat: 75, lng: 90 },
-  { name: 'Morze Łapietów', lat: 72, lng: 170 },
-  { name: 'Morze Wschodniosyberyjskie', lat: 70, lng: 160 },
-  { name: 'Morze Czukockie', lat: 70, lng: -170 },
-  { name: 'Morze Beringa', lat: 65, lng: -175 },
-  { name: 'Morze Ochockie', lat: 56, lng: 150 },
-  { name: 'Morze Japońskie', lat: 38, lng: 137 },
-  { name: 'Morze Żółte', lat: 36, lng: 123 },
-  { name: 'Morze Wschodniochińskie', lat: 29, lng: 126 },
-  { name: 'Zatoka Bengalska', lat: 15, lng: 90 },
-  { name: 'Zatoka Perska', lat: 26, lng: 52 },
-];
+  // --- Dane: Twoje ---
+  const COUNTRY_DATA = [
+    // Oceany
+    { name: 'Ocean Indyjski', lat: -20, lng: 80 },
+    { name: 'Ocean Spokojny', lat: 0, lng: -160 },
+    { name: 'Ocean Arktyczny', lat: 80, lng: 0 },
+    // Morza
+    { name: 'Morze Arabskie', lat: 20, lng: 60 },
+    { name: 'Morze Karskie', lat: 75, lng: 85 },
+    { name: 'Morze Łapietów', lat: 80, lng: 120 },
+    { name: 'Morze Wschodniosyberyjskie', lat: 75, lng: 160 },
+    { name: 'Morze Czukockie', lat: 70, lng: -170 },
+    { name: 'Morze Beringa', lat: 60, lng: -170 },
+    { name: 'Morze Ochodzkie', lat: 55, lng: 150 },
+    { name: 'Morze Japońskie', lat: 40, lng: 140 },
+    { name: 'Morze Żółte', lat: 35, lng: 120 },
+    { name: 'Morze Wschodniochińskie', lat: 30, lng: 125 },
+    // Zatoki
+    { name: 'Zatoka Bengalska', lat: 15, lng: 90 },
+    { name: 'Zatoka Perska', lat: 25, lng: 50 }
+  ];
 
-// --- Inicjalizacja listy ---
-const countryListEl = document.getElementById('countryList');
-const searchEl = document.getElementById('search');
-const startBtn = document.getElementById('startBtn');
-const resetBtn = document.getElementById('resetBtn');
-const selectAllBtn = document.getElementById('selectAll');
-const deselectAllBtn = document.getElementById('deselectAll');
-const hud = document.getElementById('hud');
-const scoreEl = document.getElementById('score');
-const progressEl = document.getElementById('progress');
-const targetNameEl = document.getElementById('targetName');
-const toastEl = document.getElementById('toast');
+  const countryListEl = document.getElementById('countryList');
+  const searchEl = document.getElementById('search');
+  const startBtn = document.getElementById('startBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const selectAllBtn = document.getElementById('selectAll');
+  const deselectAllBtn = document.getElementById('deselectAll');
+  const hud = document.getElementById('hud');
+  const scoreEl = document.getElementById('score');
+  const progressEl = document.getElementById('progress');
+  const targetNameEl = document.getElementById('targetName');
+  const toastEl = document.getElementById('toast');
+  const sortEl = document.getElementById('sort');
+  const pickCountEl = document.getElementById('pickCount');
+  const pickTopBtn = document.getElementById('pickTop');
 
-function renderCountryList(items) {
-  countryListEl.innerHTML = '';
-  for (const c of items) {
-    const li = document.createElement('li');
-    const id = `item-${c.name.replace(/\s+/g,'-')}`;
-    li.innerHTML = `<input type="checkbox" id="${id}" data-name="${c.name}" /><label for="${id}">${c.name}</label>`;
-    countryListEl.appendChild(li);
+  let filtered = [...COUNTRY_DATA];
+
+  function renderCountryList(items) {
+    countryListEl.innerHTML = '';
+    for (const c of items) {
+      const li = document.createElement('li');
+      const id = `item-${c.name.replace(/\s+/g, '-')}`;
+      li.innerHTML = `<input type="checkbox" id="${id}" data-name="${c.name}" /><label for="${id}">${c.name}</label>`;
+      countryListEl.appendChild(li);
+    }
+    if (pickCountEl) pickCountEl.max = items.length;
   }
-}
 
-let filtered = [...COUNTRY_DATA];
-renderCountryList(filtered);
-
-searchEl.addEventListener('input', () => {
-  const q = searchEl.value.trim().toLowerCase();
-  filtered = COUNTRY_DATA.filter(c => c.name.toLowerCase().includes(q));
-  renderCountryList(filtered);
-});
-
-selectAllBtn.addEventListener('click', () => {
-  countryListEl.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked=true);
-});
-deselectAllBtn.addEventListener('click', () => {
-  countryListEl.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked=false);
-});
-
-function getSelectedCountries() {
-  const names = Array.from(countryListEl.querySelectorAll('input[type="checkbox"]'))
-    .filter(cb => cb.checked)
-    .map(cb => cb.dataset.name);
-  const set = new Set(names);
-  return COUNTRY_DATA.filter(c => set.has(c.name));
-}
-
-// --- Mapa ---
-const map = L.map('map', { zoomControl:true, worldCopyJump:true }).setView([20, 0], 2);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
-  attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> • © CARTO',
-  subdomains:'abcd',
-  maxZoom:19
-}).addTo(map);
-
-let running=false, queue=[], currentIndex=0, score=0;
-let markerLayer=L.layerGroup().addTo(map);
-const markerByName = new Map();
-const baseMarkerStyle = { radius:7, color:'#374151', weight:1.25, fillColor:'#6b7280', fillOpacity:0.95 };
-const correctStyle = { color:'#14532d', fillColor:'#22c55e' };
-const wrongStyle = { color:'#7f1d1d', fillColor:'#ef4444' };
-
-function shuffle(arr){return arr.sort(()=>Math.random()-0.5);}
-function showToast(text){toastEl.textContent=text; toastEl.style.display='block'; clearTimeout(showToast._t); showToast._t=setTimeout(()=>{toastEl.style.display='none';},1200);}
-function updateHUD(){scoreEl.textContent=String(score); progressEl.textContent=`${Math.min(currentIndex,queue.length)}/${queue.length}`; targetNameEl.textContent=queue[currentIndex]?.name ?? '—';}
-function clearMarkers(){markerLayer.clearLayers(); markerByName.clear();}
-function fitToMarkers(){if(markerLayer.getLayers().length>0){try{const bounds=L.featureGroup(markerLayer.getLayers()).getBounds(); if(bounds.isValid()) map.fitBounds(bounds.pad(0.2));}catch(_){}}}
-
-function onMarkerClick(country, marker){
-  if(!running) return;
-  const target = queue[currentIndex];
-  if(!target) return;
-  if(country.name===target.name){
-    marker.setStyle(correctStyle);
-    marker.off('click');
-    score++; currentIndex++;
-    if(currentIndex>=queue.length){updateHUD(); running=false; showToast(`Koniec! Wynik: ${score}/${queue.length}`); targetNameEl.textContent='—'; return;}
-    updateHUD();
-  } else {
-    const prev={...baseMarkerStyle};
-    marker.setStyle({...baseMarkerStyle,...wrongStyle});
-    setTimeout(()=>marker.setStyle(prev),450);
-    const correctMarker = markerByName.get(target.name);
-    if(correctMarker) correctMarker.setStyle({...baseMarkerStyle, color:'#1e3a8a', fillColor:'#60a5fa'});
-    queue.splice(currentIndex,0); // requeue
-    showToast('Błąd. Spróbujesz ponownie.');
-    updateHUD();
+  function applySort(items) {
+    const mode = sortEl.value || 'name-asc';
+    const arr = [...items];
+    if (mode === 'name-asc') arr.sort((a,b) => a.name.localeCompare(b.name, 'pl'));
+    else arr.sort((a,b) => b.name.localeCompare(a.name, 'pl'));
+    return arr;
   }
-}
 
-function startQuiz(){
-  const selected = getSelectedCountries();
-  if(selected.length<2){showToast('Wybierz co najmniej 2 elementy.'); return;}
-  running=true; hud.style.display='flex'; score=0; currentIndex=0;
-  queue=shuffle([...selected]); updateHUD();
-  setUiDisabled(true); applyLayout(); clearMarkers();
-  for(const c of selected){
-    const marker = L.circleMarker([c.lat,c.lng],baseMarkerStyle).addTo(markerLayer);
-    marker.on('click',()=>onMarkerClick(c,marker));
-    markerByName.set(c.name,marker);
+  renderCountryList(applySort(filtered));
+
+  searchEl.addEventListener('input', () => {
+    const q = searchEl.value.trim().toLowerCase();
+    filtered = COUNTRY_DATA.filter(c => c.name.toLowerCase().includes(q));
+    renderCountryList(applySort(filtered));
+  });
+
+  sortEl.addEventListener('change', () => renderCountryList(applySort(filtered)));
+  selectAllBtn.addEventListener('click', () => countryListEl.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = true));
+  deselectAllBtn.addEventListener('click', () => countryListEl.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false));
+
+  pickTopBtn.addEventListener('click', () => {
+    const checkboxes = Array.from(countryListEl.querySelectorAll('input[type="checkbox"]'));
+    const n = Math.min(parseInt(pickCountEl.value) || 0, checkboxes.length);
+    checkboxes.forEach((cb,i) => cb.checked = i<n);
+  });
+
+  function getSelectedCountries() {
+    const names = Array.from(countryListEl.querySelectorAll('input[type="checkbox"]')).filter(cb=>cb.checked).map(cb=>cb.dataset.name);
+    const set = new Set(names);
+    return COUNTRY_DATA.filter(c => set.has(c.name));
   }
-  fitToMarkers();
-  setTimeout(()=>{try{if(map.invalidateSize) map.invalidateSize(); fitToMarkers();}catch(_){}} ,50);
-}
 
-function setUiDisabled(disabled){
-  startBtn.disabled=disabled;
-  countryListEl.querySelectorAll('input[type="checkbox"]').forEach(cb=>cb.disabled=disabled);
-  searchEl.disabled=disabled;
-  selectAllBtn.disabled=disabled;
-  deselectAllBtn.disabled=disabled;
-}
+  const map = L.map('map',{zoomControl:true,worldCopyJump:true}).setView([20,0],2);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
+    attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> kontrybutorzy &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    subdomains:'abcd', maxZoom:19
+  }).addTo(map);
 
-function resetQuiz(){
-  running=false;
-  setUiDisabled(false);
-  hud.style.display='none';
-  targetNameEl.textContent='—';
-  score=0; currentIndex=0; queue=[];
-  clearMarkers();
-}
+  let running=false, queue=[], currentIndex=0, score=0;
+  const markerLayer = L.layerGroup().addTo(map);
+  const markerByName = new Map();
 
-startBtn.addEventListener('click',startQuiz);
-resetBtn.addEventListener('click',resetQuiz);
+  const baseMarkerStyle = { radius: 7, color: '#374151', weight: 1.25, fillColor: '#6b7280', fillOpacity: 0.95 };
+  const correctStyle = { color: '#14532d', fillColor: '#22c55e' };
 
-function applyLayout(){try{map.invalidateSize();}catch(_){}} 
-window.addEventListener('resize',applyLayout);
+  function shuffle(arr) { return arr.sort(()=>Math.random()-0.5); }
+  function showToast(text){ toastEl.textContent=text; toastEl.style.display='block'; clearTimeout(showToast._t); showToast._t=setTimeout(()=>{toastEl.style.display='none';},1200);}
+  function updateHUD(){ scoreEl.textContent=score; progressEl.textContent=`${Math.min(currentIndex,queue.length)}/${queue.length}`; targetNameEl.textContent=queue[currentIndex]?.name ?? '—';}
+
+  function startQuiz() {
+    const selected = getSelectedCountries();
+    if(selected.length<1){showToast('Zaznacz co najmniej 1 punkt.'); return;}
+    running=true; hud.style.display='flex'; score=0; currentIndex=0; queue=shuffle([...selected]); updateHUD();
+
+    markerLayer.clearLayers(); markerByName.clear();
+    for(const c of selected){
+      const marker = L.circleMarker([c.lat,c.lng], baseMarkerStyle);
+      marker.addTo(markerLayer);
+      markerByName.set(c.name, marker);
+      marker.on('click',()=>{
+        if(!running) return;
+        const target = queue[currentIndex];
+        if(c.name===target.name){
+          marker.setStyle(correctStyle); currentIndex++; score++; updateHUD();
+          if(currentIndex>=queue.length){ running=false; showToast(`Koniec! Wynik: ${score}/${queue.length}`); return;}
+        }
+      });
+    }
+    map.fitBounds(L.featureGroup(markerLayer.getLayers()).getBounds().pad(0.2));
+  }
+
+  function resetQuiz(){ running=false; hud.style.display='none'; queue=[]; currentIndex=0; score=0; updateHUD(); markerLayer.clearLayers(); markerByName.clear();}
+
+  startBtn.addEventListener('click', startQuiz);
+  resetBtn.addEventListener('click', resetQuiz);
+
 </script>
 </body>
 </html>
