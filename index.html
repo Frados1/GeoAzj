@@ -1,570 +1,428 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Trening lokalizacji akwenów</title>
-  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-  <style>
-    :root {
-      color-scheme: dark;
-    }
-    body {
-      font-family: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-    }
-    .map-sphere {
-      position: relative;
-      border: 1px solid rgba(148, 163, 184, 0.2);
-      background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.18), rgba(2, 6, 23, 0.95)),
-        radial-gradient(circle at 75% 15%, rgba(14, 165, 233, 0.35), transparent 55%),
-        linear-gradient(135deg, rgba(15, 118, 110, 0.35), rgba(59, 130, 246, 0.25));
-      box-shadow: inset 0 0 80px rgba(8, 47, 73, 0.55), 0 20px 60px rgba(2, 6, 23, 0.65);
-      overflow: hidden;
-    }
-    .map-sphere::after {
-      content: "";
-      position: absolute;
-      inset: 12%;
-      border-radius: 50%;
-      border: 1px solid rgba(148, 163, 184, 0.25);
-      box-shadow: inset 0 0 30px rgba(248, 250, 252, 0.08);
-      pointer-events: none;
-    }
-    .world-map {
-      opacity: 0.95;
-      filter: drop-shadow(0 20px 45px rgba(13, 42, 74, 0.45));
-    }
-    .world-map .graticule line {
-      stroke: rgba(226, 232, 240, 0.08);
-      stroke-width: 1;
-      stroke-dasharray: 8 8;
-    }
-    .world-map .landmass {
-      fill: url(#landGradient);
-      stroke: rgba(15, 23, 42, 0.55);
-      stroke-width: 2;
-    }
-    .world-map .landmass.secondary {
-      fill: url(#landGradientSoft);
-    }
-    .world-map .landmass.highlight {
-      fill: url(#landHighlight);
-    }
-    .world-map .icecap {
-      fill: url(#iceGradient);
-      stroke: rgba(226, 232, 240, 0.6);
-      stroke-width: 1.5;
-    }
-    #mapWrapper {
-      cursor: crosshair;
-    }
-    .indicator {
-      position: absolute;
-      width: 16px;
-      height: 16px;
-      border-radius: 999px;
-      transform: translate(-50%, -50%);
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.2s ease, transform 0.15s ease;
-    }
-    #guessIndicator {
-      background: #34d399;
-      border: 2px solid #0f766e;
-      box-shadow: 0 0 12px rgba(16, 185, 129, 0.7);
-    }
-    #targetIndicator {
-      width: 28px;
-      height: 28px;
-      border: 2px solid rgba(248, 250, 252, 0.9);
-      background: transparent;
-      box-shadow: 0 0 16px rgba(14, 165, 233, 0.7);
-    }
-    #targetIndicator::after {
-      content: "";
-      position: absolute;
-      inset: 6px;
-      border-radius: inherit;
-      border: 2px solid rgba(16, 185, 129, 0.6);
-    }
-    .feedback-box {
-      border: 1px solid rgba(148, 163, 184, 0.25);
-      border-radius: 1.5rem;
-      padding: 1rem 1.25rem;
-      font-size: 1rem;
-      line-height: 1.5;
-      transition: border-color 0.3s ease, background 0.3s ease, color 0.3s ease;
-    }
-    .feedback-box.success {
-      border-color: rgba(74, 222, 128, 0.7);
-      background: rgba(16, 185, 129, 0.08);
-      color: #bbf7d0;
-    }
-    .feedback-box.error {
-      border-color: rgba(248, 113, 113, 0.7);
-      background: rgba(248, 113, 113, 0.08);
-      color: #fecaca;
-    }
-    .feedback-box.neutral {
-      border-color: rgba(148, 163, 184, 0.35);
-      color: #cbd5f5;
-    }
-    .stat-card {
-      border: 1px solid rgba(148, 163, 184, 0.25);
-      border-radius: 1.25rem;
-      padding: 0.85rem;
-      background: rgba(2, 6, 23, 0.45);
-    }
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      padding: 0.35rem 0.9rem;
-      border-radius: 999px;
-      border: 1px solid rgba(148, 163, 184, 0.35);
-      background: rgba(15, 23, 42, 0.8);
-      font-size: 0.85rem;
-      color: #e2e8f0;
-    }
-    #historyList {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-    }
-    #historyList li {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    #historyList .history-text {
-      flex: 1;
-    }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Mapa — oceany / morza / zatoki</title>
+<style>
+  :root{
+    --panel-width: 20vw;
+    --map-width: calc(100vw - var(--panel-width));
+    --bg-ocean: #e5f2ff;
+    --land: #d0d0d0;
+    --panel-bg: #fafafa;
+    --accent: #1f7ed0;
+    --label-color: #07203a;
+  }
+  html,body{
+    height:100%;
+    margin:0;
+    font-family: Inter, Roboto, Arial, sans-serif;
+    color: #111;
+    background: #fff;
+  }
+  .app {
+    display:flex;
+    height:100vh;
+    width:100vw;
+    overflow:hidden;
+  }
+
+  /* MAP CONTAINER */
+  .map-wrap{
+    width: var(--map-width);
+    height: 100%;
+    display: flex;
+    align-items: stretch;
+    justify-content:center;
+    background: linear-gradient(to bottom, var(--bg-ocean), #dff0ff 60%);
+    position: relative;
+  }
+
+  /* SVG scales to available area while preserving aspect ratio */
+  svg.world {
+    width: 98%;
+    height: 98%;
+    max-width: 2000px;
+    max-height: 1000px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+    border-radius: 6px;
+    background: transparent;
+  }
+
+  /* simple graticule styling */
+  .graticule { stroke: rgba(0,0,0,0.06); stroke-width: 0.6; fill: none; }
+
+  /* land placeholder (very simplified) */
+  .land { fill: var(--land); stroke: rgba(0,0,0,0.06); stroke-width: 0.3; }
+
+  /* feature points */
+  .feature { cursor: pointer; transition: transform .12s ease, r .12s ease; }
+  .feature:hover { transform: translateY(-4px); }
+
+  /* labels next to points */
+  .label {
+    font-size: 12px;
+    font-weight: 600;
+    fill: var(--label-color);
+    pointer-events: none;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.6);
+  }
+
+  /* PANEL */
+  .panel{
+    width: var(--panel-width);
+    height:100%;
+    background: var(--panel-bg);
+    border-left: 1px solid rgba(0,0,0,0.06);
+    padding: 18px;
+    box-sizing: border-box;
+    display:flex;
+    flex-direction: column;
+    gap: 12px;
+    box-shadow: -6px 0 24px rgba(0,0,0,0.02);
+  }
+  .panel h2 { margin:0; font-size:18px; color:var(--accent); }
+  .panel .hint { font-size:13px; color:#444; margin-top:6px; }
+  .controls { margin-top:8px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .btn {
+    border: none;
+    background: var(--accent);
+    color: white;
+    padding:8px 12px;
+    border-radius:6px;
+    cursor:pointer;
+    font-weight:600;
+    font-size:13px;
+  }
+  .btn.secondary {
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid rgba(31,126,208,0.14);
+  }
+  .list {
+    margin-top:8px;
+    overflow:auto;
+    padding-right:6px;
+    border-top: 1px dashed rgba(0,0,0,0.04);
+    padding-top:10px;
+  }
+  .list-item {
+    font-size:13px;
+    padding:6px 0;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:8px;
+  }
+  .small { font-size:12px; color:#666; }
+
+  /* tooltip */
+  .tooltip {
+    position: absolute;
+    pointer-events: none;
+    background: rgba(8,20,36,0.95);
+    color: white;
+    padding:6px 8px;
+    border-radius:6px;
+    font-size:13px;
+    transform: translate(-50%, -130%);
+    white-space: nowrap;
+    z-index: 40;
+    display:none;
+  }
+
+  /* responsive tweaks */
+  @media (max-width:800px){
+    :root { --panel-width: 28vw; }
+    .panel h2 { font-size:16px; }
+    .label { font-size:11px; }
+  }
+  @media (max-width:520px){
+    .app{ flex-direction: column; }
+    :root { --panel-width: 100%; --map-width: 100%; }
+    .panel { order:2; height: 26vh; overflow:auto; border-left: none; border-top: 1px solid rgba(0,0,0,0.05); }
+    .map-wrap { order:1; height: 74vh; width:100%; }
+  }
+</style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen">
-  <div class="max-w-6xl mx-auto px-4 py-10 space-y-10">
-    <header class="rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900/80 to-slate-800 p-8 shadow-2xl border border-white/5 space-y-4">
-      <p class="uppercase tracking-[0.4em] text-xs text-slate-400">Mapa pamięci · Tryb sprawdzający</p>
-      <h1 class="text-4xl md:text-5xl font-semibold text-white">Trening: kliknij właściwy akwen</h1>
-      <p class="text-lg text-slate-300 max-w-3xl">Wciśnij START, wylosuj ocean, morze albo zatokę i wskaż jego położenie bez podpowiedzi. Aplikacja policzy próby, serię trafień i podpowie kierunek, gdy chybisz.</p>
-      <div class="flex flex-wrap gap-3 text-sm">
-        <span class="px-4 py-2 rounded-full border border-white/10 text-slate-200">3 oceany</span>
-        <span class="px-4 py-2 rounded-full border border-white/10 text-slate-200">10 mórz</span>
-        <span class="px-4 py-2 rounded-full border border-white/10 text-slate-200">2 zatoki</span>
-      </div>
-    </header>
+<body>
+<div class="app">
+  <div class="map-wrap" id="mapWrap">
+    <!-- Tooltip -->
+    <div class="tooltip" id="tooltip"></div>
 
-    <main class="space-y-10">
-      <section class="grid gap-6 lg:grid-cols-5">
-        <div class="lg:col-span-3 bg-slate-900/80 border border-white/5 rounded-3xl p-6 space-y-5">
-          <div class="flex items-center justify-between gap-4 flex-wrap">
-            <div>
-              <p class="text-sm uppercase tracking-[0.3em] text-slate-400">Mapa treningowa</p>
-              <h2 class="text-2xl font-semibold text-white">Kliknij na mapie i traf w cel</h2>
-            </div>
-            <span class="px-3 py-1 rounded-full bg-slate-800 text-xs text-slate-300 border border-white/10">Tryb losowy</span>
-          </div>
-          <div id="mapWrapper" class="map-sphere relative rounded-2xl overflow-hidden aspect-[4/2]" role="button" aria-label="Mapa treningowa - kliknij, aby wskazać lokalizację">
-            <svg class="absolute inset-0 w-full h-full world-map" viewBox="0 0 800 400" aria-hidden="true">
-              <defs>
-                <radialGradient id="landGradient" cx="30%" cy="30%" r="80%">
-                  <stop offset="0%" stop-color="#f8fafc" stop-opacity="0.9" />
-                  <stop offset="35%" stop-color="#cbd5f5" stop-opacity="0.9" />
-                  <stop offset="100%" stop-color="#94a3b8" stop-opacity="0.85" />
-                </radialGradient>
-                <radialGradient id="landGradientSoft" cx="60%" cy="40%" r="90%">
-                  <stop offset="0%" stop-color="#e2e8f0" stop-opacity="0.8" />
-                  <stop offset="100%" stop-color="#94a3b8" stop-opacity="0.6" />
-                </radialGradient>
-                <radialGradient id="landHighlight" cx="40%" cy="20%" r="70%">
-                  <stop offset="0%" stop-color="#fef3c7" stop-opacity="0.85" />
-                  <stop offset="100%" stop-color="#f5d0fe" stop-opacity="0.65" />
-                </radialGradient>
-                <linearGradient id="iceGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stop-color="#f8fafc" stop-opacity="0.95" />
-                  <stop offset="100%" stop-color="#cbd5f5" stop-opacity="0.35" />
-                </linearGradient>
-              </defs>
+    <!-- SVG world map (simplified) -->
+    <!-- We do not use external assets. The land path here is a very simplified placeholder
+         to provide visual context — points are positioned by projection math. -->
+    <svg class="world" viewBox="0 0 2000 1000" preserveAspectRatio="xMidYMid meet" id="svgMap" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+          <feDropShadow dx="0" dy="4" stdDeviation="8" flood-opacity="0.06"/>
+        </filter>
+      </defs>
 
-              <g class="graticule">
-                <line x1="0" y1="40" x2="800" y2="40"></line>
-                <line x1="0" y1="100" x2="800" y2="100"></line>
-                <line x1="0" y1="160" x2="800" y2="160"></line>
-                <line x1="0" y1="220" x2="800" y2="220"></line>
-                <line x1="0" y1="280" x2="800" y2="280"></line>
-                <line x1="0" y1="340" x2="800" y2="340"></line>
-                <line x1="120" y1="0" x2="120" y2="400"></line>
-                <line x1="240" y1="0" x2="240" y2="400"></line>
-                <line x1="360" y1="0" x2="360" y2="400"></line>
-                <line x1="480" y1="0" x2="480" y2="400"></line>
-                <line x1="600" y1="0" x2="600" y2="400"></line>
-                <line x1="720" y1="0" x2="720" y2="400"></line>
-              </g>
+      <!-- ocean background (fills SVG) -->
+      <rect x="0" y="0" width="2000" height="1000" fill="#e5f2ff"></rect>
 
-              <path class="icecap" d="M120,40 C200,10 320,-5 440,10 C560,25 660,60 720,110 C640,120 520,125 400,120 C280,115 180,90 120,40 Z"></path>
+      <!-- very simplified 'land' shapes (purely decorative; not geographically exact) -->
+      <!-- These are coarse blobs to give land/ocean contrast. They are intentionally simplified. -->
+      <path class="land" d="M120 420 C160 270, 260 220, 420 200 C620 190, 720 240, 880 220 C1040 200,1150 140,1300 160 C1500 190,1580 320,1700 360 C1820 400,1880 520,1900 620 L1900 820 L1800 880 L1600 880 L1400 820 C1300 780,1200 740,1050 760 C900 780,760 820,600 820 C470 820,360 760,240 760 C160 760,80 700,80 620 C80 540,100 480,120 420 Z"></path>
 
-              <path class="landmass" d="M70,210 C60,140 120,110 210,120 C260,120 320,140 360,170 C400,200 390,240 330,260 C270,280 210,300 160,290 C110,280 80,260 70,210 Z"></path>
-              <path class="landmass secondary" d="M360,190 C370,150 440,110 520,120 C600,130 660,150 690,190 C720,230 700,270 640,280 C590,290 520,290 460,270 C400,250 350,230 360,190 Z"></path>
-              <path class="landmass" d="M540,120 C560,90 620,70 690,90 C740,105 780,140 780,180 C780,220 760,250 710,260 C660,270 600,260 570,230 C540,200 520,160 540,120 Z"></path>
-              <path class="landmass highlight" d="M520,250 C560,230 620,235 660,260 C700,285 690,320 640,330 C600,338 540,330 510,300 C490,280 500,260 520,250 Z"></path>
-              <path class="landmass secondary" d="M150,70 C210,30 320,30 380,70 C410,90 400,120 360,130 C300,140 220,140 170,120 C150,110 140,90 150,70 Z"></path>
+      <path class="land" d="M200 860 C300 840,420 800,540 800 C700 800,820 840,980 860 C1100 880,1260 920,1400 920 C1520 920,1640 900,1740 900 C1680 760,1560 630,1420 600 C1240 560,1100 540,920 520 C740 500,560 540,420 560 C290 580,200 700,200 860 Z"></path>
 
-              <g class="landmass secondary" opacity="0.9">
-                <path d="M610,60 C640,40 700,45 730,70 C760,95 750,120 710,130 C670,140 620,130 600,105 C590,90 595,70 610,60 Z"></path>
-                <path d="M660,310 C690,300 730,320 740,345 C750,365 740,380 710,380 C680,380 640,360 640,340 C640,325 645,315 660,310 Z"></path>
-                <path d="M430,60 C460,40 520,45 550,70 C580,95 570,120 530,130 C490,140 440,130 420,105 C410,90 415,70 430,60 Z"></path>
-              </g>
-            </svg>
-            <div class="absolute inset-0 pointer-events-none" aria-hidden="true">
-              <div class="absolute top-1/2 left-1/2 w-[1px] h-full bg-white/5 -translate-x-1/2"></div>
-              <div class="absolute left-1/2 top-1/2 h-[1px] w-full bg-white/5 -translate-y-1/2"></div>
-            </div>
-            <div class="absolute top-4 left-4 bg-slate-900/70 backdrop-blur rounded-full px-4 py-2 text-[0.65rem] uppercase tracking-[0.35em] text-slate-300 border border-white/10 flex items-center gap-2">
-              Cel na mapie
-              <span id="mapTargetLabel" class="tracking-normal text-sm text-emerald-300 font-semibold">—</span>
-            </div>
-            <div class="absolute bottom-4 left-4 text-xs text-slate-200/80 bg-slate-900/60 px-3 py-2 rounded-full border border-white/10">Kliknij tam, gdzie sądzisz, że leży cel.</div>
-            <div id="guessIndicator" class="indicator"></div>
-            <div id="targetIndicator" class="indicator"></div>
-          </div>
-          <p class="text-sm text-slate-400">Mapa przedstawia uproszczoną projekcję półkuli północnej i Indo-Pacyfiku. Trafienie liczy się, gdy klikniesz w promieniu ok. 7% szerokości mapy od celu.</p>
-        </div>
+      <!-- graticule: meridians and parallels -->
+      <!-- draw every 30 degrees as light lines -->
+      <!-- longitudes -->
+      <g id="graticule">
+        <!-- vertical lines for longitudes -->
+        <!-- lon: -180..180 mapped to x: 0..2000 -->
+        <!-- generate a few lines manually -->
+        <line class="graticule" x1="0" y1="0" x2="0" y2="1000" />
+        <line class="graticule" x1="250" y1="0" x2="250" y2="1000" />
+        <line class="graticule" x1="500" y1="0" x2="500" y2="1000" />
+        <line class="graticule" x1="750" y1="0" x2="750" y2="1000" />
+        <line class="graticule" x1="1000" y1="0" x2="1000" y2="1000" />
+        <line class="graticule" x1="1250" y1="0" x2="1250" y2="1000" />
+        <line class="graticule" x1="1500" y1="0" x2="1500" y2="1000" />
+        <line class="graticule" x1="1750" y1="0" x2="1750" y2="1000" />
+        <line class="graticule" x1="2000" y1="0" x2="2000" y2="1000" />
 
-        <div class="lg:col-span-2 bg-slate-900/80 border border-white/5 rounded-3xl p-6 space-y-5">
-          <div>
-            <p class="text-sm uppercase tracking-[0.3em] text-slate-400">Tryb treningu</p>
-            <h3 class="text-2xl font-semibold text-white">Panel sterowania i statystyki</h3>
-          </div>
-          <div class="rounded-2xl bg-slate-950/70 border border-white/5 p-4 space-y-1">
-            <p class="text-xs tracking-[0.35em] uppercase text-slate-400">Bieżący cel</p>
-            <p id="targetName" class="text-2xl font-semibold text-emerald-300">—</p>
-            <p id="targetType" class="text-sm text-slate-300">Wciśnij START, aby poznać pierwszy cel.</p>
-          </div>
-          <div class="flex flex-wrap gap-3">
-            <button id="startTraining" class="px-4 py-2 rounded-2xl bg-emerald-500/90 text-slate-900 font-semibold shadow hover:bg-emerald-400/90 transition">Start treningu</button>
-            <button id="skipTarget" class="px-4 py-2 rounded-2xl border border-white/10 text-slate-200 disabled:opacity-40 disabled:cursor-not-allowed" disabled>Pomiń cel</button>
-            <button id="revealTarget" class="px-4 py-2 rounded-2xl border border-amber-300/40 text-amber-200 disabled:opacity-40 disabled:cursor-not-allowed" disabled>Pokaż lokalizację</button>
-          </div>
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-center text-slate-200">
-            <div class="stat-card">
-              <p class="text-xs uppercase tracking-[0.35em] text-slate-400">Próby</p>
-              <p id="attempts" class="text-2xl font-semibold">0</p>
-            </div>
-            <div class="stat-card">
-              <p class="text-xs uppercase tracking-[0.35em] text-slate-400">Trafienia</p>
-              <p id="hits" class="text-2xl font-semibold">0</p>
-            </div>
-            <div class="stat-card">
-              <p class="text-xs uppercase tracking-[0.35em] text-slate-400">Skuteczność</p>
-              <p id="accuracy" class="text-2xl font-semibold">0%</p>
-            </div>
-            <div class="stat-card">
-              <p class="text-xs uppercase tracking-[0.35em] text-slate-400">Seria</p>
-              <p id="streak" class="text-2xl font-semibold">0</p>
-            </div>
-            <div class="stat-card">
-              <p class="text-xs uppercase tracking-[0.35em] text-slate-400">Rekord</p>
-              <p id="bestStreak" class="text-2xl font-semibold">0</p>
-            </div>
-          </div>
-          <div class="rounded-2xl bg-slate-950/60 border border-white/5 p-4 space-y-2">
-            <div class="flex items-center justify-between">
-              <p class="text-xs uppercase tracking-[0.35em] text-slate-400">Historia prób</p>
-              <span class="text-[0.7rem] text-slate-500 uppercase tracking-[0.3em]">ostatnie 6</span>
-            </div>
-            <ul id="historyList" class="space-y-2 text-sm text-slate-200">
-              <li class="text-slate-500 text-sm italic">Brak prób — rozpocznij trening.</li>
-            </ul>
-          </div>
-          <div id="feedback" class="feedback-box neutral" role="status" aria-live="polite">Wciśnij „Start treningu”, aby wylosować pierwszy akwen.</div>
-        </div>
-      </section>
+        <!-- horizontal lines for latitudes -->
+        <line class="graticule" x1="0" y1="125" x2="2000" y2="125" />
+        <line class="graticule" x1="0" y1="250" x2="2000" y2="250" />
+        <line class="graticule" x1="0" y1="375" x2="2000" y2="375" />
+        <line class="graticule" x1="0" y1="500" x2="2000" y2="500" />
+        <line class="graticule" x1="0" y1="625" x2="2000" y2="625" />
+        <line class="graticule" x1="0" y1="750" x2="2000" y2="750" />
+        <line class="graticule" x1="0" y1="875" x2="2000" y2="875" />
+      </g>
 
-      <section class="bg-slate-900/80 border border-white/5 rounded-3xl p-6 space-y-5">
-        <div class="flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <p class="text-sm uppercase tracking-[0.3em] text-slate-400">Szybka ściąga</p>
-            <h3 class="text-2xl font-semibold text-white">Wszystkie akweny w tej sesji</h3>
-          </div>
-          <span class="px-3 py-1 rounded-full border border-white/10 text-sm text-slate-300">15 lokalizacji</span>
-        </div>
-        <div class="grid md:grid-cols-3 gap-6">
-          <div>
-            <p class="text-xs uppercase tracking-[0.35em] text-slate-400 mb-2">Oceany</p>
-            <div class="flex flex-wrap gap-2">
-              <span class="badge">Ocean Indyjski</span>
-              <span class="badge">Ocean Spokojny (Pacyfik)</span>
-              <span class="badge">Ocean Arktyczny</span>
-            </div>
-          </div>
-          <div>
-            <p class="text-xs uppercase tracking-[0.35em] text-slate-400 mb-2">Morza</p>
-            <div class="flex flex-wrap gap-2">
-              <span class="badge">Morze Arabskie</span>
-              <span class="badge">Morze Karskie</span>
-              <span class="badge">Morze Łaptiewów</span>
-              <span class="badge">Morze Wschodniosyberyjskie</span>
-              <span class="badge">Morze Czukockie</span>
-              <span class="badge">Morze Beringa</span>
-              <span class="badge">Morze Ochockie</span>
-              <span class="badge">Morze Japońskie</span>
-              <span class="badge">Morze Żółte</span>
-              <span class="badge">Morze Wschodniochińskie</span>
-            </div>
-          </div>
-          <div>
-            <p class="text-xs uppercase tracking-[0.35em] text-slate-400 mb-2">Zatoki</p>
-            <div class="flex flex-wrap gap-2">
-              <span class="badge">Zatoka Bengalska</span>
-              <span class="badge">Zatoka Perska</span>
-            </div>
-            <p class="text-sm text-slate-400 mt-4">W razie potrzeby spójrz na ściągę, ale wróć do mapy tak szybko, jak to możliwe, żeby utrzymać tryb pamięciowy.</p>
-          </div>
-        </div>
-      </section>
-    </main>
+      <!-- container for dynamic points (will be filled by JS) -->
+      <g id="pointsLayer"></g>
+      <g id="labelsLayer"></g>
+
+    </svg>
   </div>
 
-  <script>
-    const locations = [
-      { name: 'Ocean Indyjski', type: 'Ocean', hint: 'Między Afryką, Indiami i Australią', x: 62, y: 65 },
-      { name: 'Ocean Spokojny (Pacyfik)', type: 'Ocean', hint: 'Między Azją, Australią i Amerykami', x: 25, y: 58 },
-      { name: 'Ocean Arktyczny', type: 'Ocean', hint: 'Wokół bieguna północnego', x: 50, y: 18 },
-      { name: 'Morze Arabskie', type: 'Morze', hint: 'Między Półwyspem Arabskim a Indiami', x: 55, y: 60 },
-      { name: 'Morze Karskie', type: 'Morze', hint: 'Północ Rosji, okolice Nowej Ziemi', x: 48, y: 22 },
-      { name: 'Morze Łaptiewów', type: 'Morze', hint: 'Między Tajmyrem a Wyspami Nowosyberyjskimi', x: 60, y: 20 },
-      { name: 'Morze Wschodniosyberyjskie', type: 'Morze', hint: 'Północne wybrzeża Syberii', x: 68, y: 22 },
-      { name: 'Morze Czukockie', type: 'Morze', hint: 'Między Alaską a Czukotką', x: 78, y: 28 },
-      { name: 'Morze Beringa', type: 'Morze', hint: 'Między Alaską a Kamczatką', x: 82, y: 35 },
-      { name: 'Morze Ochockie', type: 'Morze', hint: 'Pomiędzy Sachalinem a Kamczatką', x: 72, y: 40 },
-      { name: 'Morze Japońskie', type: 'Morze', hint: 'Między Japonią, Koreą i Rosją', x: 67, y: 45 },
-      { name: 'Morze Żółte', type: 'Morze', hint: 'Między Chinami a Koreą', x: 63, y: 48 },
-      { name: 'Morze Wschodniochińskie', type: 'Morze', hint: 'Między Chinami, Tajwanem i Riukiu', x: 65, y: 52 },
-      { name: 'Zatoka Bengalska', type: 'Zatoka', hint: 'Między Indiami, Bangladeszem i Mjanmą', x: 60, y: 63 },
-      { name: 'Zatoka Perska', type: 'Zatoka', hint: 'Między Półwyspem Arabskim a Iranem', x: 50, y: 58 }
-    ];
+  <aside class="panel" id="panel">
+    <h2>Ustawienia</h2>
+    <div class="hint">Mapa: equirectangular. Punkty odpowiadają wyszczególnionym akwenom.</div>
 
-    const HIT_RADIUS = 7;
+    <div class="controls">
+      <button class="btn" id="toggleLabels">Pokaż etykiety</button>
+      <button class="btn secondary" id="zoomToAll">Dopasuj widok</button>
+    </div>
 
-    const startBtn = document.getElementById('startTraining');
-    const skipBtn = document.getElementById('skipTarget');
-    const revealBtn = document.getElementById('revealTarget');
-    const targetNameEl = document.getElementById('targetName');
-    const targetTypeEl = document.getElementById('targetType');
-    const mapTargetLabel = document.getElementById('mapTargetLabel');
-    const mapWrapper = document.getElementById('mapWrapper');
-    const guessIndicator = document.getElementById('guessIndicator');
-    const targetIndicator = document.getElementById('targetIndicator');
-    const feedbackBox = document.getElementById('feedback');
-    const attemptsEl = document.getElementById('attempts');
-    const hitsEl = document.getElementById('hits');
-    const accuracyEl = document.getElementById('accuracy');
-    const streakEl = document.getElementById('streak');
-    const bestStreakEl = document.getElementById('bestStreak');
-    const historyListEl = document.getElementById('historyList');
+    <div class="list" id="list">
+      <!-- lista akwenów (wypełniona JS) -->
+    </div>
 
-    const toneStyles = {
-      success: { border: 'border-emerald-400/40', bg: 'bg-emerald-500/10', dot: 'bg-emerald-400', title: 'text-emerald-100', detail: 'text-emerald-200' },
-      error: { border: 'border-rose-400/40', bg: 'bg-rose-500/10', dot: 'bg-rose-400', title: 'text-rose-100', detail: 'text-rose-200' },
-      neutral: { border: 'border-slate-500/40', bg: 'bg-slate-800/60', dot: 'bg-slate-300', title: 'text-slate-100', detail: 'text-slate-300' }
-    };
+    <div style="flex:1"></div>
+    <div class="small">Plik wygenerowany lokalnie — edytuj tablicę <code>features</code> w skrypcie, by zmienić punkty.</div>
+  </aside>
+</div>
 
-    let trainingActive = false;
-    let currentTarget = null;
-    let previousTarget = null;
-    let autoNextTimeout = null;
+<script>
+/*
+  Map projection and rendering script.
+  - Equirectangular projection:
+      x = (lon + 180) / 360 * width
+      y = (90 - lat) / 180 * height
+  - SVG base size: width=2000, height=1000 (viewBox)
+  - 'features' array prefilled with akweny (oceany, morza, zatoki) podane przez użytkownika.
+  - Labels toggle: shows/hides textual labels next to points.
+*/
 
-    const stats = { attempts: 0, hits: 0, streak: 0, best: 0 };
-    const historyData = [];
+/* ============================
+   FEATURES (TU MOŻESZ EDYTOWAĆ)
+   ============================
 
-    function updateStatsUI() {
-      attemptsEl.textContent = stats.attempts;
-      hitsEl.textContent = stats.hits;
-      const accuracy = stats.attempts ? Math.round((stats.hits / stats.attempts) * 100) : 0;
-      accuracyEl.textContent = `${accuracy}%`;
-      streakEl.textContent = stats.streak;
-      bestStreakEl.textContent = stats.best;
-    }
+   Wstawione są elementy, które podałeś:
+   - Oceany: Indyjski, Spokojny, Arktyczny
+   - Morza: Arabskie, Karskie, Łaptiewów (Laptev), Wschodniosyberyjskie (East Siberian),
+           Czukockie (Chukchi), Beringa (Bering), Ochodzkie (Okhotsk),
+           Japońskie (Sea of Japan), Żółte (Yellow Sea), Wschodniochińskie (East China Sea)
+   - Zatoki: Bengalska (Bay of Bengal), Perska (Persian Gulf)
 
-    function resetStats() {
-      stats.attempts = 0;
-      stats.hits = 0;
-      stats.streak = 0;
-      stats.best = 0;
-      historyData.length = 0;
-      renderHistory();
-      updateStatsUI();
-    }
+   Współrzędne są przybliżone, dobrane aby punkty pojawiały się w oczekiwanych rejonach.
+*/
+const features = [
+  // OCEANS
+  { name: "Ocean Indyjski", lat: -20.0, lon: 80.0, type: "ocean" },
+  { name: "Ocean Spokojny", lat: 0.0, lon: -160.0, type: "ocean" },
+  { name: "Ocean Arktyczny", lat: 80.0, lon: 0.0, type: "ocean" },
 
-    function setMessage(text, tone = 'neutral') {
-      feedbackBox.textContent = text;
-      feedbackBox.className = `feedback-box ${tone}`;
-    }
+  // SEAS
+  { name: "Morze Arabskie", lat: 15.0, lon: 65.0, type: "sea" },
+  { name: "Morze Karskie", lat: 72.0, lon: 75.0, type: "sea" },
+  { name: "Morze Łaptiewów", lat: 75.0, lon: 110.0, type: "sea" },
+  { name: "Morze Wschodniosyberyjskie", lat: 75.0, lon: 155.0, type: "sea" },
+  { name: "Morze Czukockie", lat: 70.0, lon: -170.0, type: "sea" }, // -170 ~ 190E
+  { name: "Morze Beringa", lat: 56.0, lon: -170.0, type: "sea" },
+  { name: "Morze Ochockie", lat: 54.0, lon: 143.0, type: "sea" },
+  { name: "Morze Japońskie", lat: 38.0, lon: 138.0, type: "sea" },
+  { name: "Morze Żółte", lat: 35.0, lon: 122.0, type: "sea" },
+  { name: "Morze Wschodniochińskie", lat: 28.0, lon: 123.0, type: "sea" },
 
-    function placeIndicator(el, x, y) {
-      el.style.left = `${x}%`;
-      el.style.top = `${y}%`;
-      el.style.opacity = 1;
-    }
+  // BAYS
+  { name: "Zatoka Bengalska", lat: 12.0, lon: 90.0, type: "bay" },
+  { name: "Zatoka Perska", lat: 25.0, lon: 52.0, type: "bay" }
+];
 
-    function hideIndicators() {
-      guessIndicator.style.opacity = 0;
-      targetIndicator.style.opacity = 0;
-    }
+/* ============================
+   Projection function
+   ============================ */
+function project(lat, lon, width, height) {
+  // Equirectangular projection
+  const x = (lon + 180) / 360 * width;
+  const y = (90 - lat) / 180 * height;
+  return { x, y };
+}
 
-    function clearAutoNext() {
-      if (autoNextTimeout) {
-        clearTimeout(autoNextTimeout);
-        autoNextTimeout = null;
-      }
-    }
+/* ============================
+   Rendering & interactivity
+   ============================ */
+const svg = document.getElementById('svgMap');
+const pointsLayer = document.getElementById('pointsLayer');
+const labelsLayer = document.getElementById('labelsLayer');
+const listEl = document.getElementById('list');
+const tooltip = document.getElementById('tooltip');
 
-    function updateTargetDisplay(target) {
-      if (target) {
-        targetNameEl.textContent = target.name;
-        targetTypeEl.textContent = `${target.type} · ${target.hint}`;
-        mapTargetLabel.textContent = target.name;
-      } else {
-        targetNameEl.textContent = '—';
-        targetTypeEl.textContent = 'Wciśnij START, aby poznać pierwszy cel.';
-        mapTargetLabel.textContent = '—';
-      }
-    }
+let labelsVisible = false;
 
-    function chooseNextTarget(announce = true) {
-      clearAutoNext();
-      const pool = locations.filter(loc => loc !== previousTarget);
-      currentTarget = pool[Math.floor(Math.random() * pool.length)];
-      previousTarget = currentTarget;
-      updateTargetDisplay(currentTarget);
-      hideIndicators();
-      if (announce) {
-        setMessage(`Namierz ${currentTarget.name} (${currentTarget.type.toLowerCase()}).`, 'neutral');
-      }
-    }
+/* colors per type */
+const typeStyles = {
+  ocean: { fill: "#2b7fb5", r: 10 },
+  sea:   { fill: "#1f9bd6", r: 8 },
+  bay:   { fill: "#0f6f9a", r: 7 }
+};
 
-    function getClickPercent(event) {
-      const rect = mapWrapper.getBoundingClientRect();
-      const x = ((event.clientX - rect.left) / rect.width) * 100;
-      const y = ((event.clientY - rect.top) / rect.height) * 100;
-      return {
-        x: Math.min(Math.max(x, 0), 100),
-        y: Math.min(Math.max(y, 0), 100)
-      };
-    }
+/* clear and re-render points based on features array */
+function renderPoints() {
+  // clear
+  pointsLayer.innerHTML = '';
+  labelsLayer.innerHTML = '';
+  listEl.innerHTML = '';
 
-    function getDirectionalHint(from, target) {
-      const dx = target.x - from.x;
-      const dy = target.y - from.y;
-      const horizontal = Math.abs(dx) < 3 ? '' : dx > 0 ? 'bardziej na wschód' : 'bardziej na zachód';
-      const vertical = Math.abs(dy) < 3 ? '' : dy > 0 ? 'bardziej na południe' : 'bardziej na północ';
-      if (horizontal && vertical) {
-        return `${vertical} i ${horizontal}`;
-      }
-      return vertical || horizontal || 'odrobinę bliżej właściwego miejsca';
-    }
+  const vb = svg.viewBox.baseVal;
+  const width = vb.width || svg.clientWidth;
+  const height = vb.height || svg.clientHeight;
 
-    function renderHistory() {
-      historyListEl.innerHTML = '';
-      if (!historyData.length) {
-        const empty = document.createElement('li');
-        empty.className = 'text-slate-500 text-sm italic';
-        empty.textContent = 'Brak prób — rozpocznij trening.';
-        historyListEl.appendChild(empty);
-        return;
-      }
-      historyData.forEach(entry => {
-        const styles = toneStyles[entry.tone] || toneStyles.neutral;
-        const li = document.createElement('li');
-        li.className = `px-3 py-2 rounded-2xl border ${styles.border} ${styles.bg}`;
-        li.classList.add('flex', 'items-start', 'gap-3');
-        const dot = document.createElement('span');
-        dot.className = `w-2.5 h-2.5 rounded-full mt-1 ${styles.dot}`;
-        const textWrap = document.createElement('div');
-        textWrap.className = 'history-text space-y-0.5';
-        const title = document.createElement('p');
-        title.className = `text-sm font-semibold ${styles.title}`;
-        title.textContent = `${entry.result}: ${entry.name}`;
-        const detail = document.createElement('p');
-        detail.className = `text-xs ${styles.detail}`;
-        detail.textContent = entry.detail;
-        textWrap.append(title, detail);
-        li.append(dot, textWrap);
-        historyListEl.appendChild(li);
-      });
-    }
+  features.forEach((f, idx) => {
+    const p = project(f.lat, f.lon, width, height);
+    const style = typeStyles[f.type] || { fill: "#ff4d4f", r: 8 };
 
-    function addHistoryEntry(entry) {
-      historyData.unshift(entry);
-      if (historyData.length > 6) {
-        historyData.pop();
-      }
-      renderHistory();
-    }
+    // create circle
+    const circ = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    circ.setAttribute("cx", p.x.toFixed(2));
+    circ.setAttribute("cy", p.y.toFixed(2));
+    circ.setAttribute("r", style.r);
+    circ.setAttribute("fill", style.fill);
+    circ.setAttribute("class", "feature");
+    circ.setAttribute("data-name", f.name);
+    circ.setAttribute("data-idx", idx);
+    circ.setAttribute("opacity", "0.95");
+    pointsLayer.appendChild(circ);
 
-    mapWrapper.addEventListener('click', event => {
-      const coords = getClickPercent(event);
-      placeIndicator(guessIndicator, coords.x, coords.y);
+    // label (initially hidden)
+    const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    label.setAttribute("x", (p.x + style.r + 8).toFixed(2));
+    label.setAttribute("y", (p.y + 4).toFixed(2));
+    label.setAttribute("class", "label");
+    label.textContent = f.name;
+    label.style.display = labelsVisible ? "block" : "none";
+    labelsLayer.appendChild(label);
 
-      if (!trainingActive || !currentTarget) {
-        setMessage('Najpierw wciśnij „Start treningu”, żeby wylosować cel.', 'neutral');
-        return;
-      }
+    // list entry in panel
+    const item = document.createElement('div');
+    item.className = 'list-item';
+    item.innerHTML = `<div>${f.name}</div><div class="small">${f.lat}°, ${f.lon}°</div>`;
+    listEl.appendChild(item);
 
-      stats.attempts += 1;
-      const distance = Math.hypot(coords.x - currentTarget.x, coords.y - currentTarget.y);
-
-      if (distance <= HIT_RADIUS) {
-        stats.hits += 1;
-        stats.streak += 1;
-        stats.best = Math.max(stats.best, stats.streak);
-        const offset = distance.toFixed(1);
-        setMessage(`Brawo! ${currentTarget.name} trafiony (odchylenie ${offset}).`, 'success');
-        placeIndicator(targetIndicator, currentTarget.x, currentTarget.y);
-        addHistoryEntry({ tone: 'success', result: 'Trafienie', name: currentTarget.name, detail: `Odchylenie ${offset}` });
-        autoNextTimeout = setTimeout(() => chooseNextTarget(), 1500);
-      } else {
-        stats.streak = 0;
-        const hint = getDirectionalHint(coords, currentTarget);
-        setMessage(`To jeszcze nie to miejsce. Spróbuj ${hint}.`, 'error');
-        addHistoryEntry({ tone: 'error', result: 'Pudło', name: currentTarget.name, detail: `Spróbuj ${hint}.` });
-      }
-
-      updateStatsUI();
+    // tooltip + hover behavior
+    circ.addEventListener('mouseenter', (ev) => {
+      showTooltip(f.name, ev);
     });
+    circ.addEventListener('mouseleave', hideTooltip);
 
-    startBtn.addEventListener('click', () => {
-      trainingActive = true;
-      startBtn.textContent = 'Restart treningu';
-      skipBtn.disabled = false;
-      revealBtn.disabled = false;
-      clearAutoNext();
-      resetStats();
-      hideIndicators();
-      chooseNextTarget();
+    // click: briefly pulse and center/flash label
+    circ.addEventListener('click', (ev) => {
+      pulseCircle(circ);
+      // temporarily show label if hidden
+      if (!labelsVisible) {
+        label.style.display = 'block';
+        setTimeout(()=> {
+          if(!labelsVisible) label.style.display = 'none';
+        }, 2000);
+      }
     });
+  });
+}
 
-    skipBtn.addEventListener('click', () => {
-      if (!trainingActive || !currentTarget) return;
-      const skipped = currentTarget;
-      hideIndicators();
-      addHistoryEntry({ tone: 'neutral', result: 'Pominięto', name: skipped.name, detail: 'Cel został pominięty.' });
-      chooseNextTarget(false);
-      setMessage(`Pominięto poprzedni cel. Teraz znajdź ${currentTarget.name}.`, 'neutral');
-    });
+/* pulse animation (simple SVG scale via r change) */
+function pulseCircle(circleEl) {
+  const r0 = Number(circleEl.getAttribute('r') || 8);
+  let grow = r0 + 6;
+  circleEl.setAttribute('r', grow);
+  setTimeout(()=> circleEl.setAttribute('r', r0), 220);
+}
 
-    revealBtn.addEventListener('click', () => {
-      if (!trainingActive || !currentTarget) return;
-      stats.attempts += 1;
-      stats.streak = 0;
-      placeIndicator(targetIndicator, currentTarget.x, currentTarget.y);
-      addHistoryEntry({ tone: 'neutral', result: 'Podgląd', name: currentTarget.name, detail: 'Pozycja pokazana przez aplikację.' });
-      setMessage(`Zapisz w pamięci: ${currentTarget.name} leży tutaj. Kliknij jeszcze raz bez podpowiedzi.`, 'error');
-      updateStatsUI();
-    });
+/* tooltip placement */
+function showTooltip(text, ev) {
+  tooltip.textContent = text;
+  tooltip.style.display = 'block';
+  positionTooltip(ev);
+}
+function hideTooltip() {
+  tooltip.style.display = 'none';
+}
+function positionTooltip(ev) {
+  // ev may be a MouseEvent over SVG; we want to place tooltip relative to page
+  const x = ev.clientX;
+  const y = ev.clientY;
+  tooltip.style.left = x + 'px';
+  tooltip.style.top = y + 'px';
+}
 
-    updateTargetDisplay(null);
-    updateStatsUI();
-    renderHistory();
-  </script>
+/* toggle labels */
+document.getElementById('toggleLabels').addEventListener('click', () => {
+  labelsVisible = !labelsVisible;
+  const btn = document.getElementById('toggleLabels');
+  btn.textContent = labelsVisible ? 'Ukryj etykiety' : 'Pokaż etykiety';
+  // toggle display for all labels
+  const texts = labelsLayer.querySelectorAll('text');
+  texts.forEach(t => t.style.display = labelsVisible ? 'block' : 'none');
+});
+
+/* zoomToAll: here it simply ensures SVG uses full viewBox (no external zoom libs) */
+document.getElementById('zoomToAll').addEventListener('click', ()=> {
+  // As placeholder: we just rerender (useful after manual edits)
+  renderPoints();
+});
+
+/* handle mousemove over SVG to position tooltip nicely */
+svg.addEventListener('mousemove', (ev) => {
+  if (tooltip.style.display === 'block') {
+    positionTooltip(ev);
+  }
+});
+
+/* handle window resize -> re-render points (to adjust to scaling) */
+window.addEventListener('resize', () => {
+  renderPoints();
+});
+
+/* initial render */
+renderPoints();
+
+/* ============================
+   NOTES:
+   - To change list of akwenów, edytuj tablicę 'features' powyżej.
+   - Każdy wpis to: { name: "Nazwa", lat: 52.0, lon: 19.0, type: "sea|ocean|bay" }
+   - Tablica może być pusta — skrypt obsłuży brak punktów.
+   - Jeśli chcesz inne style (kolory/rozmiary), edytuj 'typeStyles' w skrypcie.
+   ============================ */
+</script>
 </body>
 </html>
